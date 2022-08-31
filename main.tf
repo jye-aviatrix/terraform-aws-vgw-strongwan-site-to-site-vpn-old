@@ -45,3 +45,11 @@ resource "aws_customer_gateway" "main" {
     Name = var.onprem_vpn_gw_name
   }
 }
+
+# Create VPN connection
+resource "aws_vpn_connection" "main" {
+  vpn_gateway_id      = module.cloudvpc.vgw_id
+  customer_gateway_id = aws_customer_gateway.main.id
+  type                = "ipsec.1"
+  static_routes_only  = false
+}
