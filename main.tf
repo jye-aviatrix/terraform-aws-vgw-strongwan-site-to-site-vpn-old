@@ -46,10 +46,57 @@ resource "aws_customer_gateway" "main" {
   }
 }
 
+locals {
+  tunnel_1_psk_name = "${aws_vpn_connection.main.id}-tunnel-1-psk" 
+  tunnel_2_psk_name = "${aws_vpn_connection.main.id}-tunnel-2-psk" 
+}
+
 # Create VPN connection
 resource "aws_vpn_connection" "main" {
   vpn_gateway_id      = module.cloudvpc.vgw_id
   customer_gateway_id = aws_customer_gateway.main.id
   type                = "ipsec.1"
   static_routes_only  = false
+  tags = {
+    Name = var.onprem_vpn_gw_name
+  }
 }
+
+
+# Store IPSec Key in Secret Manager
+resource "aws_secretsmanager_secret" "tunnel_1_psk" {
+  name =  local.tunnel_1_psk_name
+}
+
+resource "aws_secretsmanager_secret_version" "tunnel_1_psk" {
+  secret_id = aws_secretsmanager_secret.tunnel_1_psk.id
+  secret_string = <<EOF
+   {
+    "psk": ${aws_vpn_connection.main.tunnel1_preshared_key}
+   }
+EOF
+}
+
+resource "aws_secretsmanager_secret" "tunnel_2_psk" {
+  name = local.tunnel_2_psk_name  
+}
+
+resource "aws_secretsmanager_secret_version" "tunnel_2_psk" {
+  secret_id = aws_secretsmanager_secret.tunnel_2_psk.id
+  secret_string = <<EOF
+   {
+    "psk": ${aws_vpn_connection.main.tunnel2_preshared_key}
+   }
+EOF
+}
+
+# # Deploy CloudFormation Stack 
+# resource "aws_cloudformation_stack" "vpn_gateway" {
+#   name = "vpn_gateway"
+
+#   parameters = {
+#     pAuthType = "psk"
+#   }
+
+#   template_body = file("${path.module}/vpn-gateway-strongswan.yml")
+# }
