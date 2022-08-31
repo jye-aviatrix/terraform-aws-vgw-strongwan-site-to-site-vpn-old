@@ -1,8 +1,17 @@
 # terraform-aws-vgw-strongwan-site-to-site-vpn
 Create AWS VGW on one VPC, and EC2 instance with StrongWAN on another VPC, create Site to Site VPN between them
 
+* This module creates two VPCs in AWS, default us-east-1 region
+* One VPC simulate on-premise data center, with an instance with Quuaga StrongWan deployed in public subnet, acting as IPSec BGP router connect from on-premise to cloud
+* One VPC have VGW attached and will connect to Quuaga via IPSec/BGP.
+* Test instance deployed in both sides public subnets.
 
-Inspired by: https://github.com/aws-samples/vpn-gateway-strongswan
+![](20220831181831.png)  
+
+This module is inspired by: https://github.com/aws-samples/vpn-gateway-strongswan
+Original test will require you create VPC, test instance, change route tables, create customer gateway, VGW, and VPN connection and download configuration, all manually.
+
+This module automats everything. You need to specify EC2 key pair to be used for the test instances.
 
 Note, IKEv1 is been used here.
 
