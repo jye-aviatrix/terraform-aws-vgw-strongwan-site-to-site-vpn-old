@@ -67,16 +67,6 @@ resource "aws_vpn_connection" "main" {
 locals {
   tunnel_1_psk_name = "${aws_vpn_connection.main.id}-tunnel-1-psk" 
   tunnel_2_psk_name = "${aws_vpn_connection.main.id}-tunnel-2-psk" 
-  tunnel_1_psk = <<EOF
-   {
-    "psk": ${aws_vpn_connection.main.tunnel1_preshared_key}
-   }
-EOF
-  tunnel_2_psk = <<EOF
-   {
-    "psk": ${aws_vpn_connection.main.tunnel2_preshared_key}
-   }
-EOF
 }
 resource "aws_secretsmanager_secret" "tunnel_1_psk" {
   name =  local.tunnel_1_psk_name
