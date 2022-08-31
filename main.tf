@@ -25,5 +25,23 @@ module "onpremvpc" {
   public_subnets     = slice(cidrsubnets(var.onprem_vpc_cidr, 2, 2, 2, 2), 0, 2) # Caculate consecuitive CIDR range for public subnets
   private_subnets    = slice(cidrsubnets(var.onprem_vpc_cidr, 2, 2, 2, 2), 2, 4) # Caculate consecuitive CIDR range for private subnets
   enable_vpn_gateway = false
+  
 
+}
+
+# Create EIP for OnPrem VPN Gateway
+resource "aws_eip" "onpremvpngw" {
+  vpc = true
+}
+
+
+# Create customer gateway
+resource "aws_customer_gateway" "main" {
+  bgp_asn    = var.onprem_asn
+  ip_address = aws_eip.onpremvpngw.public_ip
+  type       = "ipsec.1"
+
+  tags = {
+    Name = var.onprem_vpn_gw_name
+  }
 }

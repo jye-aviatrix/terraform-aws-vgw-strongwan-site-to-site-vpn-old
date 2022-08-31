@@ -22,3 +22,13 @@ variable "onprem_vpc_cidr" {
     default = "10.0.200.0/24"
     description = "Specify on-prem VPC CIDR"  
 }
+
+variable "onprem_asn" {
+  default = 65000
+  description = "ASN of onprem VPN gateway"
+}
+
+variable "onprem_vpn_gw_name" {
+  default = "onprem_vpn_gw"
+  description = "OnPrem VPN gateway name"
+}
