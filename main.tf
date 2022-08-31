@@ -144,3 +144,18 @@ module "onprem_test_ec2" {
   vm_name = "onprem-test-ec2"
   vpc_id = module.onpremvpc.vpc_id
 }
+
+# Add Cloud Routes to OnPrem route tables, point to the StrongWAN gateway
+
+resource "aws_route" "public_vpn_gw" {
+  count                  = length(module.onpremvpc.public_route_table_ids)
+  route_table_id         = module.onpremvpc.public_route_table_ids[count.index]
+  destination_cidr_block = var.cloud_vpc_cidr
+  network_interface_id = aws_cloudformation_stack.vpn_gateway.outputs.NicID
+}
+resource "aws_route" "private_vpn_gw" {
+  count                  = length(module.onpremvpc.private_route_table_ids)
+  route_table_id         = module.onpremvpc.private_route_table_ids[count.index]
+  destination_cidr_block = var.cloud_vpc_cidr
+  network_interface_id = aws_cloudformation_stack.vpn_gateway.outputs.NicID
+}

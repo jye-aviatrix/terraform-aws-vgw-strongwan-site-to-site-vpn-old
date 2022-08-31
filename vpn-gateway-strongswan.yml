@@ -372,11 +372,13 @@ Resources:
           Arn: !GetAtt rInstanceProfile.Arn
         NetworkInterfaces:
           - DeviceIndex: 0
-            DeleteOnTermination: true
+            NetworkInterfaceId:
+              Ref: myENI
+            # DeleteOnTermination: true
             Description: !Sub '${pSystem}-${pApp}-${pEnvPurpose}'
-            Groups:
-              - !Ref rInstanceSecurityGroup
-            AssociatePublicIpAddress: !Ref pUseElasticIp
+            # Groups:
+            #   - !Ref rInstanceSecurityGroup
+            # AssociatePublicIpAddress: !Ref pUseElasticIp
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash -x
@@ -908,7 +910,8 @@ Resources:
     Condition: cUseElasticIp
     Properties:
       AllocationId: !Ref pEipAllocationId
-      InstanceId: !Ref rVpnGateway
+      # InstanceId: !Ref rVpnGateway
+      NetworkInterfaceId: !Ref myENI
 
   rVpnGateway:
     Type: AWS::EC2::Instance
@@ -919,9 +922,9 @@ Resources:
         Version:
           Fn::GetAtt:
             [ rLaunchTemplate, LatestVersionNumber ]
-      NetworkInterfaces:
-        - DeviceIndex: '0'
-          SubnetId: !Ref pSubnetId
+      # NetworkInterfaces:
+      #   - DeviceIndex: '0'
+      #     SubnetId: !Ref pSubnetId
       SourceDestCheck: false
       Tags:
         - Key: Name
@@ -1018,3 +1021,19 @@ Resources:
     Properties:
       LogGroupName: !Sub '/${pSystem}/${pApp}/ec2/${pEnvPurpose}'
       RetentionInDays: 30
+
+  myENI:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+        Tags:
+        - Key: Name
+          Value: !Sub '${pSystem}-${pApp}-${pEnvPurpose}'
+        SourceDestCheck: 'false'
+        GroupSet:
+        - !Ref rInstanceSecurityGroup
+        SubnetId: !Ref pSubnetId
+
+Outputs:
+  NicID:
+    Description: The network interface ID
+    Value: !Ref myENI
