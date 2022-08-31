@@ -32,3 +32,7 @@ variable "onprem_vpn_gw_name" {
   default = "onprem_vpn_gw"
   description = "OnPrem VPN gateway name"
 }
+
+variable "key_name" {
+  description = "Provide EC2 Key Pair name for test machines launched in Public subnets"
+}

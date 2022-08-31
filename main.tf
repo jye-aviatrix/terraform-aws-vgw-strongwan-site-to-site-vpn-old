@@ -124,3 +124,23 @@ resource "aws_cloudformation_stack" "vpn_gateway" {
 
   template_body = file("${path.module}/vpn-gateway-strongswan.yml")
 }
+
+# Add Test instances
+module "cloud_test_ec2" {
+  source  = "jye-aviatrix/aws-linux-vm-public/aws"
+  version = "1.0.3"
+  key_name = var.key_name
+  region = var.region
+  subnet_id = module.cloudvpc.public_subnets[0]
+  vm_name = "cloud-test-ec2"
+  vpc_id = module.cloudvpc.vpc_id
+}
+module "onprem_test_ec2" {
+  source  = "jye-aviatrix/aws-linux-vm-public/aws"
+  version = "1.0.3"
+  key_name = var.key_name
+  region = var.region
+  subnet_id = module.onpremvpc.public_subnets[0]
+  vm_name = "onprem-test-ec2"
+  vpc_id = module.onpremvpc.vpc_id
+}
