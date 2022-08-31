@@ -32,6 +32,9 @@ module "onpremvpc" {
 # Create EIP for OnPrem VPN Gateway
 resource "aws_eip" "onpremvpngw" {
   vpc = true
+  tags = {
+    Name = var.onprem_vpn_gw_name
+  }
 }
 
 
@@ -46,10 +49,6 @@ resource "aws_customer_gateway" "main" {
   }
 }
 
-locals {
-  tunnel_1_psk_name = "${aws_vpn_connection.main.id}-tunnel-1-psk" 
-  tunnel_2_psk_name = "${aws_vpn_connection.main.id}-tunnel-2-psk" 
-}
 
 # Create VPN connection
 resource "aws_vpn_connection" "main" {
@@ -64,17 +63,30 @@ resource "aws_vpn_connection" "main" {
 
 
 # Store IPSec Key in Secret Manager
-resource "aws_secretsmanager_secret" "tunnel_1_psk" {
-  name =  local.tunnel_1_psk_name
-}
 
-resource "aws_secretsmanager_secret_version" "tunnel_1_psk" {
-  secret_id = aws_secretsmanager_secret.tunnel_1_psk.id
-  secret_string = <<EOF
+locals {
+  tunnel_1_psk_name = "${aws_vpn_connection.main.id}-tunnel-1-psk" 
+  tunnel_2_psk_name = "${aws_vpn_connection.main.id}-tunnel-2-psk" 
+  tunnel_1_psk = <<EOF
    {
     "psk": ${aws_vpn_connection.main.tunnel1_preshared_key}
    }
 EOF
+  tunnel_2_psk = <<EOF
+   {
+    "psk": ${aws_vpn_connection.main.tunnel2_preshared_key}
+   }
+EOF
+}
+resource "aws_secretsmanager_secret" "tunnel_1_psk" {
+  name =  local.tunnel_1_psk_name
+}
+
+
+
+resource "aws_secretsmanager_secret_version" "tunnel_1_psk" {
+  secret_id = aws_secretsmanager_secret.tunnel_1_psk.id
+  secret_string = jsonencode({"psk":"${aws_vpn_connection.main.tunnel1_preshared_key}"})
 }
 
 resource "aws_secretsmanager_secret" "tunnel_2_psk" {
@@ -83,20 +95,42 @@ resource "aws_secretsmanager_secret" "tunnel_2_psk" {
 
 resource "aws_secretsmanager_secret_version" "tunnel_2_psk" {
   secret_id = aws_secretsmanager_secret.tunnel_2_psk.id
-  secret_string = <<EOF
-   {
-    "psk": ${aws_vpn_connection.main.tunnel2_preshared_key}
-   }
-EOF
+  secret_string = jsonencode({"psk":"${aws_vpn_connection.main.tunnel2_preshared_key}"})
 }
 
-# # Deploy CloudFormation Stack 
-# resource "aws_cloudformation_stack" "vpn_gateway" {
-#   name = "vpn_gateway"
+# Deploy CloudFormation Stack 
+# Parameter reference: https://github.com/aws-samples/vpn-gateway-strongswan
+# Or review local yaml file
 
-#   parameters = {
-#     pAuthType = "psk"
-#   }
+resource "aws_cloudformation_stack" "vpn_gateway" {
+  name = "vpn-gateway"
 
-#   template_body = file("${path.module}/vpn-gateway-strongswan.yml")
-# }
+  capabilities = ["CAPABILITY_NAMED_IAM"]
+
+  parameters = {
+    pAuthType = "psk"
+    # tunnel 1
+    pTunnel1PskSecretName = local.tunnel_1_psk_name
+    pTunnel1VgwOutsideIpAddress = aws_vpn_connection.main.tunnel1_address
+    pTunnel1CgwInsideIpAddress = "${aws_vpn_connection.main.tunnel1_cgw_inside_address}/${split("/",aws_vpn_connection.main.tunnel1_inside_cidr)[1]}"
+    pTunnel1VgwInsideIpAddress = "${aws_vpn_connection.main.tunnel1_vgw_inside_address}/${split("/",aws_vpn_connection.main.tunnel1_inside_cidr)[1]}"
+    pTunnel1VgwBgpAsn = aws_vpn_connection.main.tunnel1_bgp_asn
+    pTunnel1BgpNeighborIpAddress = aws_vpn_connection.main.tunnel1_vgw_inside_address
+    # tunnel 2
+    pTunnel2PskSecretName = local.tunnel_2_psk_name
+    pTunnel2VgwOutsideIpAddress = aws_vpn_connection.main.tunnel2_address
+    pTunnel2CgwInsideIpAddress = "${aws_vpn_connection.main.tunnel2_cgw_inside_address}/${split("/",aws_vpn_connection.main.tunnel2_inside_cidr)[1]}"
+    pTunnel2VgwInsideIpAddress = "${aws_vpn_connection.main.tunnel2_vgw_inside_address}/${split("/",aws_vpn_connection.main.tunnel2_inside_cidr)[1]}"
+    pTunnel2VgwBgpAsn = aws_vpn_connection.main.tunnel2_bgp_asn
+    pTunnel2BgpNeighborIpAddress = aws_vpn_connection.main.tunnel2_vgw_inside_address
+
+    pVpcId = module.onpremvpc.vpc_id
+    pVpcCidr = module.onpremvpc.vpc_cidr_block
+    pSubnetId = module.onpremvpc.public_subnets[0]
+    pUseElasticIp = true
+    pEipAllocationId = aws_eip.onpremvpngw.id
+    pLocalBgpAsn = var.onprem_asn
+  }
+
+  template_body = file("${path.module}/vpn-gateway-strongswan.yml")
+}
