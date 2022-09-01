@@ -1,6 +1,6 @@
 
 module "cloudvpc" {
-  source = "./moduels/aws_vpc"
+  source = "./modules/aws_vpc"
 
   name = var.cloud_vpc_name
   cidr = var.cloud_vpc_cidr
@@ -16,7 +16,7 @@ module "cloudvpc" {
 
 
 module "onpremvpc" {
-  source = "./moduels/aws_vpc"
+  source = "./modules/aws_vpc"
 
   name = var.onprem_vpc_name
   cidr = var.onprem_vpc_cidr
