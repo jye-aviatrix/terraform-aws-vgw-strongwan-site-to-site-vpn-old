@@ -99,6 +99,7 @@ resource "aws_cloudformation_stack" "vpn_gateway" {
 
   parameters = {
     keyName = var.key_name
+    myIP = data.http.ip.body
     pAuthType = "psk"
     # tunnel 1
     pTunnel1PskSecretName = local.tunnel_1_psk_name

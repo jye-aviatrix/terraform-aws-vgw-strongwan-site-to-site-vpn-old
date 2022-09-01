@@ -143,6 +143,10 @@ Parameters:
     Type: String
     Description: Provide EC2 Key Pair name
 
+  myIP:
+    Type: String
+    Description: Provide my public IP to be excluded in ingress SSH
+
   pOrg:
     Type: String
     Description: Used to qualify resource names
@@ -336,6 +340,10 @@ Resources:
       VpcId: !Ref pVpcId
       GroupDescription: Allow traffic from other VPN gateway and all locally sourced traffic
       SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Sub '${myIP}/32'
         - IpProtocol: udp
           FromPort: 500
           ToPort: 500
