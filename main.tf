@@ -9,8 +9,8 @@ module "cloudvpc" {
   public_subnets     = slice(cidrsubnets(var.cloud_vpc_cidr, 2, 2, 2, 2), 0, 2) # Caculate consecuitive CIDR range for public subnets
   private_subnets    = slice(cidrsubnets(var.cloud_vpc_cidr, 2, 2, 2, 2), 2, 4) # Caculate consecuitive CIDR range for private subnets
   enable_vpn_gateway = true
-  remote_vpc_cidr    = var.onprem_vpc_cidr
-
+  propagate_private_route_tables_vgw = true
+  propagate_public_route_tables_vgw = true
 }
 
 
