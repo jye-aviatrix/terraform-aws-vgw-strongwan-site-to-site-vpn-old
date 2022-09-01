@@ -1050,3 +1050,10 @@ Outputs:
   NicID:
     Description: The network interface ID
     Value: !Ref myENI
+  InstanceID:
+    Description: The ID of the VPN Gateway
+    Value: !Ref rVpnGateway
+  PrivateIp:
+    Description: The private IP address of the specified instance.
+    Value: !GetAtt rVpnGateway.PrivateIp
+  
