@@ -139,6 +139,10 @@ Metadata:
         default: EC2 AMI ID
 
 Parameters:
+  keyName:
+    Type: String
+    Description: Provide EC2 Key Pair name
+
   pOrg:
     Type: String
     Description: Used to qualify resource names
@@ -366,6 +370,7 @@ Resources:
     Properties: 
       LaunchTemplateName: !Sub '${pSystem}-${pApp}-${pEnvPurpose}'
       LaunchTemplateData: 
+        KeyName:  !Ref keyName
         InstanceType: !Ref pInstanceType
         ImageId: !Ref pAmiId
         IamInstanceProfile: 
